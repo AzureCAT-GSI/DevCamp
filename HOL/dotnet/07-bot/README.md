@@ -14,6 +14,7 @@ In this hands-on lab, you will learn how to:
 * Set up the developing environment to support the creation of bot applications.
 * Create your own bot from scratch.
 * Create your own bot using Azure Bot Service.
+* Call Azure Cognitive Services to leverage computer vision API
 * Hosting your bot in Azure.
 
 ## Prerequisites

@@ -10,16 +10,20 @@ using Newtonsoft.Json;
 using Microsoft.Bot.Builder.Dialogs;
 using System.IO;
 using System.Net.Http.Headers;
+using System.Configuration;
+using System.Web;
+using Newtonsoft.Json.Linq;
 
 namespace CityPowerBot
 {
     [BotAuthentication]
     public class MessagesController : ApiController
     {
+        private const int IMAGE_SIZE_LIMIT = 4000000;
         public static Stream LastImage { get; set; } = null;
         public static String LastImageType { get; set; } = String.Empty;
         public static String LastImageName { get; set; } = String.Empty;
-
+        public static String LastImageTags { get; set; } = String.Empty;
         public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
         {
             if (activity.Type == ActivityTypes.Message)
@@ -30,9 +34,12 @@ namespace CityPowerBot
                 if (imageAttachment != null)
                 {
                     LastImage = await GetImageStream(connector, imageAttachment);
+
+                    LastImageTags = await GetImageTags(LastImage);
+
                     LastImageName = imageAttachment.Name;
                     LastImageType = imageAttachment.ContentType;
-                    Activity reply = activity.CreateReply("Got your image!");
+                    Activity reply = activity.CreateReply($"Got your image! with the following tags {LastImageTags}");
                     await connector.Conversations.ReplyToActivityAsync(reply);
                 }
                 else
@@ -110,6 +117,75 @@ namespace CityPowerBot
             }
 
             return null;
+        }
+
+        
+        private static async Task<String> GetImageTags(Stream imageStream)
+        {
+            // Call cognitive services
+            var jsonResult = string.Empty;
+
+           using( HttpClient client = new HttpClient())
+           {
+                // Request headers.
+                client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", ConfigurationManager.AppSettings["AZURE_COGNITIVE_SERVICES_KEY"]);
+                var queryString = HttpUtility.ParseQueryString(string.Empty);
+                // Request parameters. A third optional parameter is "details".
+                queryString["visualFeatures"] = "Description";
+                //queryString["details"] = "{string}";
+                queryString["language"] = "en";
+                //string requestParameters = "?visualFeatures=Categories&language=en";
+
+                // Assemble the URI for the REST API Call.
+                string uri = ConfigurationManager.AppSettings["AZURE_COGNITIVE_SERVICES_URI"] + queryString;
+                
+                // Request body. Posts a locally stored JPEG image.
+                byte[] byteData = null;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    imageStream.CopyTo(ms);
+                    //TODO: Check if ms is not null or empty
+
+                    // check also length
+                    if (ms.Length >= IMAGE_SIZE_LIMIT)
+                        throw new ArgumentException($"Images size should be less than {IMAGE_SIZE_LIMIT / 1024} Kb");
+
+                    byteData = ms.ToArray();
+                }
+
+                using (ByteArrayContent content = new ByteArrayContent(byteData))
+                //var imageUrl = "{\"url\":\"https://pbs.twimg.com/media/C8oYUqNXsAA-5xC.jpg\"}";
+                //using (ByteArrayContent content = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(imageUrl)))
+                {
+                    // This example uses content type "application/octet-stream".
+                    // The other content types you can use are "application/json" and "multipart/form-data".
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    //content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    
+                    // Execute the REST API call
+                    var response = await client.PostAsync(uri, content);
+
+                    // TODO: Check Response code
+                    if(response.StatusCode != HttpStatusCode.OK)
+                    {
+                        // log
+                        System.Diagnostics.Trace.TraceError($"Exception occured when calling computer vision API for picture\n Details \n\tSatus code: {response.StatusCode}, \n\t{response.ReasonPhrase}, \n\tRequest: {response.RequestMessage}");
+                        return null;
+                    }
+
+                    // Get the JSON response.
+                    jsonResult = await response.Content.ReadAsStringAsync();
+                }
+            }
+
+            // Retrieve only tags
+            JObject json = JObject.Parse(jsonResult);
+            var tags = json["description"]["tags"];
+
+            //string[] tagsText = tags.Select(t => (string)t).ToArray();
+            //var result = string.Join(", ", tagsText);
+
+            return tags.ToString();
         }
     }
 }
