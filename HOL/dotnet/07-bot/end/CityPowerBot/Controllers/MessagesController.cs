@@ -24,6 +24,7 @@ namespace CityPowerBot
         public static String LastImageType { get; set; } = String.Empty;
         public static String LastImageName { get; set; } = String.Empty;
         public static String LastImageTags { get; set; } = String.Empty;
+
         public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
         {
             if (activity.Type == ActivityTypes.Message)
@@ -130,12 +131,9 @@ namespace CityPowerBot
                 // Request headers.
                 client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", ConfigurationManager.AppSettings["AZURE_COGNITIVE_SERVICES_KEY"]);
                 var queryString = HttpUtility.ParseQueryString(string.Empty);
-                // Request parameters. A third optional parameter is "details".
                 queryString["visualFeatures"] = "Description";
-                //queryString["details"] = "{string}";
                 queryString["language"] = "en";
-                //string requestParameters = "?visualFeatures=Categories&language=en";
-
+                
                 // Assemble the URI for the REST API Call.
                 string uri = ConfigurationManager.AppSettings["AZURE_COGNITIVE_SERVICES_URI"] + queryString;
                 
@@ -154,13 +152,8 @@ namespace CityPowerBot
                 }
 
                 using (ByteArrayContent content = new ByteArrayContent(byteData))
-                //var imageUrl = "{\"url\":\"https://pbs.twimg.com/media/C8oYUqNXsAA-5xC.jpg\"}";
-                //using (ByteArrayContent content = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(imageUrl)))
-                {
-                    // This example uses content type "application/octet-stream".
-                    // The other content types you can use are "application/json" and "multipart/form-data".
+                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                    //content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     
                     // Execute the REST API call
                     var response = await client.PostAsync(uri, content);
@@ -180,12 +173,10 @@ namespace CityPowerBot
 
             // Retrieve only tags
             JObject json = JObject.Parse(jsonResult);
+
             var tags = json["description"]["tags"];
 
-            //string[] tagsText = tags.Select(t => (string)t).ToArray();
-            //var result = string.Join(", ", tagsText);
-
-            return tags.ToString();
+           return tags !=null ? tags.ToString(): null;
         }
     }
 }
