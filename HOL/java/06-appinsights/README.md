@@ -72,7 +72,7 @@ We will add both components to our application and enable the sending of telemet
 
 1. Next, open the `build.gradle` file for your project and add the following dependency in the dependencies section: 
     ```Java
-   compile group: 'com.microsoft.azure', name: 'applicationinsights-web', version: '2.+'
+   compile('com.microsoft.azure:applicationinsights-web:2.+')
     ```
     Gradle will automatically retrieve and include these libraries when the application is built or run. 
     
@@ -87,6 +87,8 @@ We will add both components to our application and enable the sending of telemet
 
     import org.springframework.boot.context.embedded.FilterRegistrationBean;
     import org.springframework.context.annotation.Bean;
+    import org.springframework.core.Ordered;
+    import org.springframework.beans.factory.annotation.Value
     import org.springframework.context.annotation.Configuration;
     import com.microsoft.applicationinsights.TelemetryConfiguration;
     import com.microsoft.applicationinsights.web.internal.WebRequestTrackingFilter;
@@ -107,9 +109,9 @@ We will add both components to our application and enable the sending of telemet
 	
 	//Set AI Web Request Tracking Filter
         @Bean
-        public FilterRegistrationBean aiFilterRegistration(WebRequestTrackingFilter webRequestTrackingFilter) {
+        public FilterRegistrationBean aiFilterRegistration() {
             FilterRegistrationBean registration = new FilterRegistrationBean();
-            registration.setFilter(webRequestTrackingFilter);
+            registration.setFilter(new WebRequestTrackingFilter(@Value("${spring.application.name:application}"));
 	    registration.setName("webRequestTrackingFilter");
             registration.addUrlPatterns("/*");
             registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
@@ -360,7 +362,7 @@ Application Insights can also integrate with the Java logging frameworks such as
 
 1. Open the `build.gradle` file for your project and add this line to the dependencies section: 
     ```Java
-    compile 'com.microsoft.azure:applicationinsights-logging-logback:2.0.0-BETA'
+    compile('com.microsoft.azure:applicationinsights-logging-logback:2.+)'
     ```
     Gradle will automatically retrieve and include the library when the application is built or run. 
     
