@@ -88,7 +88,7 @@ We will add both components to our application and enable the sending of telemet
     import org.springframework.boot.context.embedded.FilterRegistrationBean;
     import org.springframework.context.annotation.Bean;
     import org.springframework.core.Ordered;
-    import org.springframework.beans.factory.annotation.Value
+    import org.springframework.beans.factory.annotation.Value;
     import org.springframework.context.annotation.Configuration;
     import com.microsoft.applicationinsights.TelemetryConfiguration;
     import com.microsoft.applicationinsights.web.internal.WebRequestTrackingFilter;
@@ -109,14 +109,14 @@ We will add both components to our application and enable the sending of telemet
 	
 	//Set AI Web Request Tracking Filter
         @Bean
-        public FilterRegistrationBean aiFilterRegistration() {
-            FilterRegistrationBean registration = new FilterRegistrationBean();
-            registration.setFilter(new WebRequestTrackingFilter(@Value("${spring.application.name:application}"));
-	    registration.setName("webRequestTrackingFilter");
-            registration.addUrlPatterns("/*");
-            registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
-            return registration;
-        } 
+        public FilterRegistrationBean aiFilterRegistration(@Value("${spring.application.name:application}") String applicationName) {
+	       FilterRegistrationBean registration = new FilterRegistrationBean();
+	       registration.setFilter(new WebRequestTrackingFilter(applicationName));
+	       registration.setName("webRequestTrackingFilter");
+	       registration.addUrlPatterns("/*");
+	       registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
+	       return registration;
+       } 
 
 	//Set up AI Web Request Tracking Filter
         @Bean(name = "WebRequestTrackingFilter")
