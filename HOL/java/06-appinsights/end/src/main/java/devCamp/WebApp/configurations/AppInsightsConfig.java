@@ -2,7 +2,7 @@ package devCamp.WebApp.configurations;
 
 import javax.servlet.Filter;
 
-import org.springframework.boot.context.embedded.FilterRegistrationBean;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.beans.factory.annotation.Value;
